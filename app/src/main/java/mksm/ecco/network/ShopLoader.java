@@ -1,7 +1,8 @@
-package mksm.ecco.model;
+package mksm.ecco.network;
 
 import java.util.List;
 
+import mksm.ecco.model.EccoShop;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
@@ -12,7 +13,7 @@ import retrofit2.http.POST;
 public interface ShopLoader {
 
 	@POST
-	Call<List<EccoShop>> getShops(@Body Region region);
+	Call<Resource> getResource(@Body Region region);
 
 	public static class Region {
 		protected String region;

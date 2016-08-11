@@ -47,6 +47,19 @@ public abstract class DatabaseTable {
 	//раз уж в DatabaseTable сделали Set<Datatable> - то переопределим
 	@Override
 	public boolean equals(Object o) {
-		return super.equals(o);
+		if (o == null || !(o instanceof DatabaseTable)) {
+			return false;
+		}
+		DatabaseTable other = (DatabaseTable) o;
+		return this.getTableName().equals(other.getTableName()) && this.getColumnNames().equals(other.getColumnNames());
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = getTableName().hashCode();
+		for (String columnName : getColumnNames()) {
+			hash += columnName.hashCode();
+		}
+		return hash;
 	}
 }

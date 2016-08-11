@@ -10,6 +10,9 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.List;
 
+import mksm.ecco.model.database.CacheTable;
+import mksm.ecco.network.Resource;
+import mksm.ecco.network.ShopLoader;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -22,14 +25,16 @@ public class EccoService {
 	private final static String IS_OFFLINE = "isOffline";
 	private final static String DEFAULT = "default";
 	private final static String REGION = "Москва";
+	public final static double MOSCOW_LONGTITUDE = 37.609218;
+	public final static double MOSCOW_LATITUDE = 55.753559;         //https://tech.yandex.ru/maps/doc/jsapi/1.x/dg/concepts/map-parameters-docpage/?ncrnd=6379
 
 
 	private DownloadObservable observable;
-	private DownloadTask mSignInTask;
 	private boolean mIsWorking;
 	private List<EccoShop> cachedShops;
 	private final ShopLoader loader;
 	private final ConnectivityManager cm;
+	private final CacheTable cacheTable;
 
 
 	public EccoService(Context applicationContext) {
@@ -41,39 +46,60 @@ public class EccoService {
 		loader = retrofit.create(ShopLoader.class);
 		cm = (ConnectivityManager) applicationContext.getApplicationContext().getSystemService(
 				Context.CONNECTIVITY_SERVICE);
+		cacheTable = CacheTable.getInstance(applicationContext);
 
 	}
 
-	public List<EccoShop> getShops(boolean fromNetwork) {
+	public void startShopsLoading(boolean fromNetwork) {
+		if (mIsWorking)
+			return;
+		observable.notifyStarted();
 		if (!fromNetwork) {
 			if (cachedShops == null || cachedShops.isEmpty()) {
-
+				observable.notifySucceeded(cachedShops);
 			}
+		} else {
+			DownloadTask task = new DownloadTask(REGION);
+			task.execute();
 		}
+	}
+
+	public void registerObserver(final Observer observer) {
+		observable.registerObserver(observer);
+		if (mIsWorking) {
+			observer.onDownloadStarted();
+		}
+	}
+
+	public void unregisterObserver(final Observer observer) {
+		observable.unregisterObserver(observer);
 	}
 
 	public interface Observer {
 		void onDownloadStarted();
 
-		void onDownloadSucceeded();
+		void onDownloadSucceeded(List<EccoShop> shops);
 
 		void onDownloadFailed(String reason);
 	}
 
 	private class DownloadObservable extends Observable<Observer> {
 		public void notifyStarted() {
+			mIsWorking = true;
 			for (final Observer observer : mObservers) {
 				observer.onDownloadStarted();
 			}
 		}
 
-		public void notifySucceeded() {
+		public void notifySucceeded(List<EccoShop> shops) {
+			mIsWorking = false;
 			for (final Observer observer : mObservers) {
-				observer.onDownloadSucceeded();
+				observer.onDownloadSucceeded(shops);
 			}
 		}
 
 		public void notifyFailed(String reason) {
+			mIsWorking = false;
 			for (final Observer observer : mObservers) {
 				observer.onDownloadFailed(reason);
 			}
@@ -97,7 +123,14 @@ public class EccoService {
 			List<EccoShop> result = null;
 			if (isOnline()) {
 				try {
-					result = loader.getShops(new ShopLoader.Region(region)).execute().body();
+					Resource resource = loader.getResource(new ShopLoader.Region(region)).execute().body();
+					if (resource.isResponseRignt()) {
+						result = resource.getShops();
+						cacheTable.replaceAllNotes(result); //пропишем в кэш новые значения
+					} else {
+						Log.e(TAG, resource.getErrorMessage());
+						failed = true;
+					}
 				} catch (IOException ex) {
 					failed = true;
 					Log.e(TAG, ex.getMessage());
@@ -107,18 +140,19 @@ public class EccoService {
 			}
 			if (result == null || result.isEmpty()) {
 				failed = true;
-
+				result = cacheTable.getAllShops();
 			}
 			return result;
 		}
 
 		@Override
 		protected void onPostExecute(final List<EccoShop> shops) {
-			EccoService.this.mIsWorking = false;
 
-			if (shops != null && !shops.isEmpty()) {
-				EccoService.this.cachedShops = shops;
-				observable.notifySucceeded();
+			if (!failed) {
+				if (shops != null && !shops.isEmpty()) {
+					EccoService.this.cachedShops = shops;
+				}
+				observable.notifySucceeded(shops);
 			} else {
 				if (isOffline) {
 					observable.notifyFailed(IS_OFFLINE);
