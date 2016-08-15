@@ -42,6 +42,12 @@ public class MainActivity extends AppCompatActivity implements EccoService.Obser
 	}
 
 	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		eccoSerive.unregisterObserver(this);
+	}
+
+	@Override
 	public void onDownloadStarted() {
 		refreshLayout.post(new Runnable() {
 			@Override
