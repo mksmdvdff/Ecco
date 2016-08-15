@@ -19,7 +19,7 @@ public class Resource {
     }
 
     public boolean isResponseRignt(){
-        return this.meta.code==200 && "".equals(this.meta.error_message);
+        return "".equals(this.meta.error_message);
     }
 
     public String getErrorMessage(){

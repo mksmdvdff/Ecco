@@ -5,6 +5,7 @@ import java.util.List;
 import mksm.ecco.model.EccoShop;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.Header;
 import retrofit2.http.POST;
 
 /**
@@ -12,11 +13,11 @@ import retrofit2.http.POST;
  */
 public interface ShopLoader {
 
-	@POST
-	Call<Resource> getResource(@Body Region region);
+	@POST("/shops/list")
+	Call<Resource> getResource(@Header("Content-Type") String requestType, @Body Region region);
 
 	public static class Region {
-		protected String region;
+		public String region;
 
 		public Region(String region) {
 			this.region = region;

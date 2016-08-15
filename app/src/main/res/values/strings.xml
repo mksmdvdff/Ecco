@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Ecco</string>
+    <string name="sort">По умолчанию</string>
+    <string name="default_sort">По умолчанию</string>
+    <string name="distance_sort">По расстоянию</string>
+    <string name="offline_problem">Проблемы с соединением.</string>
+    <string name="default_problem">Сервис временно недоступен. Попробуйте позднее.</string>
+
 </resources>

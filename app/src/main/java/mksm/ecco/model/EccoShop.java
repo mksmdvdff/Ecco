@@ -38,14 +38,6 @@ public class EccoShop {
         this.longtitude = longtitude;
         this.latitude = latitude;
         this.isNew = isNew;
-        try {
-            double longF = Double.parseDouble(longtitude);
-            double latF = Double.parseDouble(latitude);
-            fromCenter = Math.sqrt(Math.pow(Math.abs(longF - EccoService.MOSCOW_LONGTITUDE), 2) + Math.pow(Math.abs(latF - EccoService.MOSCOW_LATITUDE), 2));
-        } catch (NumberFormatException ex) {
-            Log.e(TAG, "NFE: longtitude = " + longtitude + ", latitude = " + latitude);
-            fromCenter = 10; // лушче в конец списка, чем в начало
-        }
     }
 
     public String getId() {
@@ -101,6 +93,17 @@ public class EccoShop {
     }
 
     public double getFromCenter() {
+        if (fromCenter == 0) {
+            try {
+                double longF = Double.parseDouble(longtitude);
+                double latF = Double.parseDouble(latitude);
+                fromCenter = Math.sqrt(Math.pow(Math.abs(longF - EccoService.MOSCOW_LONGTITUDE), 2) + Math.pow(Math.abs(latF - EccoService.MOSCOW_LATITUDE), 2));
+            } catch (NumberFormatException ex) {
+                Log.e(TAG, "NFE: longtitude = " + longtitude + ", latitude = " + latitude);
+                fromCenter = 10; // лушче в конец списка, чем в начало
+            }
+        }
+
         return fromCenter;
     }
 }

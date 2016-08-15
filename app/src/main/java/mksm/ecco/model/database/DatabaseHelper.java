@@ -40,7 +40,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
-		for (DatabaseTable databaseTable : databaseTables.k) {
+		for (DatabaseTable databaseTable : getDatabaseTables()) {
 			StringBuilder queryBuilder = new StringBuilder("CREATE TABLE ");
 			queryBuilder.append(databaseTable.getTableName()).append(" (");
 			for (Map.Entry<String, String> columns : databaseTable.getColumns().entrySet()) {
@@ -66,5 +66,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 			db.execSQL("DROP TABLE IF EXISTS " + databaseTable.getTableName());
 		}
 		this.onCreate(db);
+	}
+
+	public Set<DatabaseTable> getDatabaseTables() {
+		return databaseTables;
 	}
 }

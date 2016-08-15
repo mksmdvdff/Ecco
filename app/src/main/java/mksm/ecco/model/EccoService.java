@@ -13,6 +13,11 @@ import java.util.List;
 import mksm.ecco.model.database.CacheTable;
 import mksm.ecco.network.Resource;
 import mksm.ecco.network.ShopLoader;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -22,8 +27,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class EccoService {
 
 	private final static String TAG = "EccoServiceTag";
-	private final static String IS_OFFLINE = "isOffline";
-	private final static String DEFAULT = "default";
+	public final static String IS_OFFLINE = "isOffline";
+	public final static String DEFAULT = "default";
 	private final static String REGION = "Москва";
 	public final static double MOSCOW_LONGTITUDE = 37.609218;
 	public final static double MOSCOW_LATITUDE = 55.753559;         //https://tech.yandex.ru/maps/doc/jsapi/1.x/dg/concepts/map-parameters-docpage/?ncrnd=6379
@@ -36,17 +41,46 @@ public class EccoService {
 	private final ConnectivityManager cm;
 	private final CacheTable cacheTable;
 
+	private static EccoService sInstance;
+
+	public static synchronized EccoService getInstance(Context applicationContext) {
+
+		if (sInstance == null) {
+			sInstance = new EccoService(applicationContext);
+		}
+		return sInstance;
+	}
+
 
 	public EccoService(Context applicationContext) {
+		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+		logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+		OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+		httpClient.addInterceptor(logging);
+		httpClient.networkInterceptors().add(new Interceptor() {
+
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				Request original = chain.request();
+
+				Request.Builder requestBuilder = original.newBuilder().header("Content-Type", "");
+
+				Request request = requestBuilder.build();
+				return chain.proceed(request);
+			}
+		});
+
 		Retrofit retrofit = new Retrofit.Builder()
-				.baseUrl("http://jsonplaceholder.typicode.com/")
+				.baseUrl("http://app.ecco-shoes.ru/")
 				.addConverterFactory(GsonConverterFactory.create())
+				.client(httpClient.build())
 				.build();
 
 		loader = retrofit.create(ShopLoader.class);
 		cm = (ConnectivityManager) applicationContext.getApplicationContext().getSystemService(
 				Context.CONNECTIVITY_SERVICE);
 		cacheTable = CacheTable.getInstance(applicationContext);
+		observable = new DownloadObservable();
 
 	}
 
@@ -54,10 +88,8 @@ public class EccoService {
 		if (mIsWorking)
 			return;
 		observable.notifyStarted();
-		if (!fromNetwork) {
-			if (cachedShops == null || cachedShops.isEmpty()) {
-				observable.notifySucceeded(cachedShops);
-			}
+		if (!fromNetwork && cachedShops != null && !cachedShops.isEmpty()) {
+			observable.notifySucceeded(cachedShops);
 		} else {
 			DownloadTask task = new DownloadTask(REGION);
 			task.execute();
@@ -80,7 +112,7 @@ public class EccoService {
 
 		void onDownloadSucceeded(List<EccoShop> shops);
 
-		void onDownloadFailed(String reason);
+		void onDownloadFailed(String reason, List<EccoShop> cachedShops);
 	}
 
 	private class DownloadObservable extends Observable<Observer> {
@@ -98,10 +130,10 @@ public class EccoService {
 			}
 		}
 
-		public void notifyFailed(String reason) {
+		public void notifyFailed(String reason, List<EccoShop> cachedShops) {
 			mIsWorking = false;
 			for (final Observer observer : mObservers) {
-				observer.onDownloadFailed(reason);
+				observer.onDownloadFailed(reason, cachedShops);
 			}
 		}
 	}
@@ -123,7 +155,7 @@ public class EccoService {
 			List<EccoShop> result = null;
 			if (isOnline()) {
 				try {
-					Resource resource = loader.getResource(new ShopLoader.Region(region)).execute().body();
+					Resource resource = loader.getResource(null, new ShopLoader.Region(region)).execute().body();
 					if (resource.isResponseRignt()) {
 						result = resource.getShops();
 						cacheTable.replaceAllNotes(result); //пропишем в кэш новые значения
@@ -148,16 +180,17 @@ public class EccoService {
 		@Override
 		protected void onPostExecute(final List<EccoShop> shops) {
 
+			if (shops != null && !shops.isEmpty()) {
+				EccoService.this.cachedShops = shops;
+			}
+
 			if (!failed) {
-				if (shops != null && !shops.isEmpty()) {
-					EccoService.this.cachedShops = shops;
-				}
 				observable.notifySucceeded(shops);
 			} else {
 				if (isOffline) {
-					observable.notifyFailed(IS_OFFLINE);
+					observable.notifyFailed(IS_OFFLINE, cachedShops);
 				} else {
-					observable.notifyFailed(DEFAULT);
+					observable.notifyFailed(DEFAULT, cachedShops);
 				}
 			}
 		}

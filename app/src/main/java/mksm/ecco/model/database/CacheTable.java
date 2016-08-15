@@ -3,6 +3,7 @@ package mksm.ecco.model.database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteStatement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,6 @@ import mksm.ecco.model.EccoShop;
 public class CacheTable extends DatabaseTable{
 
     private static CacheTable sInstance;
-    private final String TABLE_NAME = "cache";
 
     private final String ID_COLUMN = "_id";
     private final String NAME_COLUMN = "name";
@@ -47,7 +47,21 @@ public class CacheTable extends DatabaseTable{
 
     @Override
     public void init() {
+        TABLE_NAME = "cache";
 
+        columns.put(ID_COLUMN," TEXT PRIMARY KEY ");
+        columns.put(NAME_COLUMN," TEXT ");
+        columns.put(COUNTRY_COLUMN," TEXT ");
+        columns.put(REGION_COLUMN," TEXT ");
+        columns.put(TOWN_COLUMN," TEXT ");
+        columns.put(ADDRESS_COLUMN," TEXT ");
+        columns.put(METRO_COLUMN," TEXT ");
+        columns.put(PHONE_COLUMN," TEXT ");
+        columns.put(WORKTIME_COLUMN," TEXT ");
+        columns.put(TYPE_COLUMN," TEXT ");
+        columns.put(LONGTITUDE_COLUMN," TEXT ");
+        columns.put(LATITUDE_COLUMN," TEXT ");
+        columns.put(IS_NEW_COLUMN," TEXT ");
     }
 
     public List<EccoShop> getAllShops() {
@@ -82,6 +96,8 @@ public class CacheTable extends DatabaseTable{
     public void replaceAllNotes(List<EccoShop> shops) {
         mDb.execSQL(DELETE_ALL_STRING);
         mDb.execSQL(VACUUM);
+        mDb.beginTransaction();
+        //уж простите, но c prepared statements я заморачиваться не сталыы
         for (EccoShop shop : shops) {
             ContentValues content = new ContentValues();
             content.put(ID_COLUMN, shop.getId());
@@ -99,5 +115,7 @@ public class CacheTable extends DatabaseTable{
             content.put(IS_NEW_COLUMN, shop.getIsNew());
             mDb.insert(TABLE_NAME, null, content);
         }
+        mDb.setTransactionSuccessful();
+        mDb.endTransaction();
     }
 }

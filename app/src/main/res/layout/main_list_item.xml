@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.daimajia.swipe.SwipeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                android:layout_width="match_parent"
+                                android:layout_height="?android:attr/listPreferredItemHeight"
+                                android:id="@+id/swipe_item">
+    <!-- Bottom View Start-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="#FF5534"
+        android:gravity="center">
+
+        <ImageButton
+        android:id="@+id/trash"
+        android:layout_width="80dp"
+        android:layout_height="match_parent"
+        android:src="@drawable/delete"
+        android:background="#FF5534"/>
+        <!-- Surface View Start -->
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+                  >
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/list_item_address"
+            android:layout_marginTop="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="6dp"
+            android:textSize="10sp"
+            android:textColor="@android:color/black"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/list_item_city"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="10dp"
+            android:textSize="8sp"
+            android:textColor="@android:color/darker_gray"/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/list_item_phone"
+                android:layout_alignParentLeft="true"
+                android:textSize="10sp"
+                android:textColor="@android:color/black"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/list_item_metro"
+                android:textSize="10sp"
+                android:layout_alignParentRight="true"
+                android:textColor="@android:color/black"/>
+
+        </RelativeLayout>
+
+    </LinearLayout>
+</com.daimajia.swipe.SwipeLayout>
